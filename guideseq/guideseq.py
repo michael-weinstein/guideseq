@@ -58,10 +58,15 @@ class GuideSeq:
             sys.exit()
 
         # Allow the user to specify min reads for demultiplex if they want
+        # Also allow user to specify bwa multithreading -MMW
         if 'demultiplex_min_reads' in manifest_data:
             self.demultiplex_min_reads = manifest_data['demultiplex_min_reads']
         else:
             self.demultiplex_min_reads = DEFAULT_DEMULTIPLEX_MIN_READS
+        if 'bwa_threads' in manifest_data:
+            self.bwa_threads = manifest_data['bwa_threads']
+        else:
+            self.bwa_threads = 1
 
         # Make sure the user has specified a control barcode
         if 'control' not in self.samples.keys():
@@ -186,7 +191,8 @@ class GuideSeq:
                            self.reference_genome,
                            self.consolidated[sample]['read1'],
                            self.consolidated[sample]['read2'],
-                           sample_alignment_path)
+                           sample_alignment_path,
+                           self.bwa_threads)
                 self.aligned[sample] = sample_alignment_path
                 logger.info('Finished aligning reads to genome.')
 
@@ -298,6 +304,7 @@ def parse_args():
     align_parser.add_argument('--read1', required=True)
     align_parser.add_argument('--read2', required=True)
     align_parser.add_argument('--outfolder', required=True)
+    align_parser.add_argument('--bwaThreads', type = int, default = 1)
 
     identify_parser = subparsers.add_parser('identify', help='Identify GUIDE-seq offtargets')
     identify_parser.add_argument('--aligned', required=True)
@@ -413,6 +420,7 @@ def main():
         g.BWA_path = args.bwa
         g.reference_genome = args.genome
         g.output_folder = args.outfolder
+        g.bwa_threads = args.bwaThreads
         g.samples = [sample]
         g.consolidated = {sample: {}}
         g.consolidated[sample]['read1'] = args.read1
